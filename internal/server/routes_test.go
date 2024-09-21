@@ -1,15 +1,18 @@
 package server
 
 import (
+	"htmx/cmd/web"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
+
+	"github.com/a-h/templ"
 )
 
 func TestHandler(t *testing.T) {
-	s := &Server{}
-	server := httptest.NewServer(http.HandlerFunc(s.HelloWorldHandler))
+	server := httptest.NewServer(templ.Handler(web.Home()))
 	defer server.Close()
 	resp, err := http.Get(server.URL)
 	if err != nil {
@@ -20,12 +23,13 @@ func TestHandler(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("expected status OK; got %v", resp.Status)
 	}
-	expected := "{\"message\":\"Hello World\"}"
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		t.Fatalf("error reading response body. Err: %v", err)
 	}
-	if expected != string(body) {
-		t.Errorf("expected response body to be %v; got %v", expected, string(body))
+
+	expected := "Get Random Number"
+	if !strings.Contains(string(body), expected) {
+		t.Errorf("expected response body to contain %v; got %v", expected, string(body))
 	}
 }

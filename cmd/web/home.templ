@@ -1,0 +1,18 @@
+package web
+
+templ Home() {
+	@Base() {
+		<div>
+			<h1 class="text-xl">HTMX Testing</h1>
+			<p>Click the button to see the magic happen!</p>
+			<button
+				class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+				hx-get="/api/random_number"
+				hx-target="#random-number"
+			>
+				Get Random Number
+			</button>
+			<div id="random-number"></div>
+		</div>
+	}
+}

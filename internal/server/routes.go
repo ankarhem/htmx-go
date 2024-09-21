@@ -1,13 +1,10 @@
 package server
 
 import (
-	"encoding/json"
+	"htmx/cmd/web"
 	"log"
 	"net/http"
-
 	"time"
-
-	"htmx/cmd/web"
 
 	"github.com/a-h/templ"
 	"github.com/coder/websocket"
@@ -16,28 +13,16 @@ import (
 func (s *Server) RegisterRoutes() http.Handler {
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", s.HelloWorldHandler)
+
+	mux.Handle("/", templ.Handler(web.Home()))
+	mux.HandleFunc("/api/random_number", web.RandomNumberHandler)
 
 	mux.HandleFunc("/livereload", s.livereloadHandler)
 
 	fileServer := http.FileServer(http.FS(web.Files))
 	mux.Handle("/assets/", fileServer)
-	mux.Handle("/web", templ.Handler(web.HelloForm()))
-	mux.HandleFunc("/hello", web.HelloWebHandler)
 
 	return mux
-}
-
-func (s *Server) HelloWorldHandler(w http.ResponseWriter, r *http.Request) {
-	resp := make(map[string]string)
-	resp["message"] = "Hello World"
-
-	jsonResp, err := json.Marshal(resp)
-	if err != nil {
-		log.Fatalf("error handling JSON marshal. Err: %v", err)
-	}
-
-	_, _ = w.Write(jsonResp)
 }
 
 func (s *Server) livereloadHandler(w http.ResponseWriter, r *http.Request) {
