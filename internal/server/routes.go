@@ -5,12 +5,12 @@ import (
 	"log"
 	"net/http"
 
-	"fmt"
 	"time"
+
+	"htmx/cmd/web"
 
 	"github.com/a-h/templ"
 	"github.com/coder/websocket"
-	"htmx/cmd/web"
 )
 
 func (s *Server) RegisterRoutes() http.Handler {
@@ -18,7 +18,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", s.HelloWorldHandler)
 
-	mux.HandleFunc("/websocket", s.websocketHandler)
+	mux.HandleFunc("/livereload", s.livereloadHandler)
 
 	fileServer := http.FileServer(http.FS(web.Files))
 	mux.Handle("/assets/", fileServer)
@@ -40,7 +40,7 @@ func (s *Server) HelloWorldHandler(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(jsonResp)
 }
 
-func (s *Server) websocketHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) livereloadHandler(w http.ResponseWriter, r *http.Request) {
 	socket, err := websocket.Accept(w, r, nil)
 
 	if err != nil {
@@ -56,11 +56,10 @@ func (s *Server) websocketHandler(w http.ResponseWriter, r *http.Request) {
 	socketCtx := socket.CloseRead(ctx)
 
 	for {
-		payload := fmt.Sprintf("server timestamp: %d", time.Now().UnixNano())
-		err := socket.Write(socketCtx, websocket.MessageText, []byte(payload))
+		err := socket.Write(socketCtx, websocket.MessageText, []byte("keepalive"))
 		if err != nil {
 			break
 		}
-		time.Sleep(time.Second * 2)
+		time.Sleep(time.Second * 10)
 	}
 }

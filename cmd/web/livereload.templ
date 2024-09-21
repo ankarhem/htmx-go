@@ -1,0 +1,52 @@
+package web
+
+import "os"
+
+var isDev = os.Getenv("APP_ENV") == "local"
+
+templ LiveReload() {
+	<script id="livereload-script" type="module" port={ os.Getenv("PORT") }>
+        /** Time to wait before reconnecting to the LiveReload server */
+        let delay = 0;
+        const isReconnect = () => delay !== 0;
+        const increment = 25;
+
+        const LiveReloadEvents = {
+            KeepAlive: 'keepalive',
+        };
+
+        var port = document.getElementById('livereload-script').getAttribute('port');
+        function connect() {
+            var socket = new WebSocket(`ws://localhost:${port}/livereload`);
+
+            socket.onmessage = function (msg) {
+                switch (msg.data) {
+                    case LiveReloadEvents.KeepAlive:
+                        break;
+                    default:
+                        console.log('Unknown message: ' + msg.data);
+                }
+            };
+
+            socket.onopen = function () {
+                if (isReconnect()) {
+                    window.location.reload();
+                } else {
+                    console.log('Connected to LiveReload server');
+                }
+            };
+
+            socket.onclose = function () {
+                if (delay < 1000) {
+                    delay += increment;
+                } else {
+                    delay += delay;
+                }
+                console.log(`Disconnected from LiveReload server. Reconnecting in ${delay} seconds`);
+                setTimeout(connect, delay);
+            };
+        }
+
+        connect();
+    </script>
+}
