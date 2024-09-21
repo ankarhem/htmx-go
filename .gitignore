@@ -29,3 +29,6 @@ tmp/
 # Project build
 main
 *templ.go
+
+# Tailwind output
+cmd/web/assets/css/output.css
