@@ -51,10 +51,16 @@ templ LiveReload() {
                     } else if (attempts < 10) {
                         timeout = attempts * 30;
                     } else {
-                        timeout = Math.max(30_000, attempts * 30 * 1.5);
+                        // break-even at ~32 attempts
+                        timeout = Math.min(30_000, Math.pow(attempts, 2) * 30);
                     }
-                    console.log(`[livereload]: reconnecting in ${timeout}ms`);
-                    setTimeout(() => connect(attempts+1), timeout);
+
+                    if (attempts < 50) {
+                        console.log(`[livereload]: reconnecting in ${timeout}ms`);
+                        setTimeout(() => connect(attempts+1), timeout);
+                    } else {
+                        console.log('[livereload]: could not reestablish connection, giving up');
+                    }
                 };
             }
 
