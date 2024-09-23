@@ -5,59 +5,60 @@ import "os"
 var is_dev = os.Getenv("APP_ENV") == "local"
 
 templ LiveReload() {
-	<script id="livereload-script" type="module" port={ os.Getenv("PORT") }>
-        const LiveReloadEvents = {
-            Reload: 'reload',
-            KeepAlive: 'keepalive',
-        };
+	if is_dev {
+		<script id="livereload-script" type="module" port={ os.Getenv("PORT") }>
+            const LiveReloadEvents = {
+                Reload: 'reload',
+                KeepAlive: 'keepalive',
+            };
 
-        var port = document.getElementById('livereload-script').getAttribute('port');
-        function connect(attempts = 0) {
-            console.log(attempts);
-            var socket = new WebSocket(`ws://localhost:${port}/livereload`);
+            var port = document.getElementById('livereload-script').getAttribute('port');
+            function connect(attempts = 0) {
+                var socket = new WebSocket(`ws://localhost:${port}/livereload`);
 
-            const is_reconnect = attempts !== 0;
+                const is_reconnect = attempts !== 0;
 
-            socket.onmessage = function (msg) {
-                switch (msg.data) {
-                    case LiveReloadEvents.KeepAlive:
-                        break;
-                    case LiveReloadEvents.Reload:
-                        console.log('[livereload]: reloading');
+                socket.onmessage = function (msg) {
+                    switch (msg.data) {
+                        case LiveReloadEvents.KeepAlive:
+                            break;
+                        case LiveReloadEvents.Reload:
+                            console.log('[livereload]: reloading');
+                            window.location.reload();
+                            break;
+                        default:
+                            console.log('[livereload]: unknown message: ' + msg.data);
+                    }
+                };
+
+                socket.onopen = function () {
+                    if (is_reconnect) {
                         window.location.reload();
-                        break;
-                    default:
-                        console.log('[livereload]: unknown message: ' + msg.data);
-                }
-            };
+                    } else {
+                        console.log('[livereload] connected');
+                    }
+                };
 
-            socket.onopen = function () {
-                if (is_reconnect) {
-                    window.location.reload();
-                } else {
-                    console.log('[livereload] connected');
-                }
-            };
+                socket.onclose = function () {
+                    if (is_reconnect) return;
+                    console.log('[livereload] disconnected');
+                    setTimeout(() => connect(1), 30);
+                };
+                socket.onerror = function (err) {
+                    let timeout;
+                    if (attempts < 5) {
+                        timeout = 30;
+                    } else if (attempts < 10) {
+                        timeout = attempts * 30;
+                    } else {
+                        timeout = Math.max(30_000, attempts * 30 * 1.5);
+                    }
+                    console.log(`[livereload]: reconnecting in ${timeout}ms`);
+                    setTimeout(() => connect(attempts+1), timeout);
+                };
+            }
 
-            socket.onclose = function () {
-                if (is_reconnect) return;
-                console.log('[livereload] disconnected');
-                setTimeout(() => connect(1), 30);
-            };
-            socket.onerror = function (err) {
-                let timeout;
-                if (attempts < 5) {
-                    timeout = 30;
-                } else if (attempts < 10) {
-                    timeout = attempts * 30;
-                } else {
-                    timeout = Math.max(30_000, attempts * 30 * 1.5);
-                }
-                console.log(`[livereload]: reconnecting in ${timeout}ms`);
-                setTimeout(() => connect(attempts+1), timeout);
-            };
-        }
-
-        connect();
-    </script>
+            connect();
+        </script>
+	}
 }
